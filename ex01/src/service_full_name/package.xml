@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>service_full_name</name>
+  <version>0.0.0</version>
+  <description>Service node to return full name</description>
+  <maintainer email="Mr.Nikita2912@gmail.com">nek1t</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <build_depend>rclpy</build_depend>
+  <exec_depend>rclpy</exec_depend>
+
+  <build_depend>full_name_interface</build_depend>
+  <exec_depend>full_name_interface</exec_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
+
