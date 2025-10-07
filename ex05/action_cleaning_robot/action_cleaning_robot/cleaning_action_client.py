@@ -8,6 +8,8 @@ class CleaningClient(Node):
     def __init__(self):
         super().__init__('cleaning_action_client')
         self.client = ActionClient(self, CleaningTask, 'cleaning_action')
+        self.get_logger().info('Waiting for action server...')
+        self.client.wait_for_server()
 
     def send_goal(self, task_type, area_size=0.0, target_x=0.0, target_y=0.0):
         self.get_logger().info(f'Sending goal: {task_type}')
@@ -26,28 +28,30 @@ class CleaningClient(Node):
             return None
 
         self.get_logger().info('Goal accepted, waiting for result...')
+
         result_future = goal_handle.get_result_async()
-
-        while not result_future.done():
-            rclpy.spin_once(self, timeout_sec=0.1)
-
+        rclpy.spin_until_future_complete(self, result_future)
         result = result_future.result().result
-        self.get_logger().info(f'Task finished: success={result.success}, '
-                               f'cleaned_points={result.cleaned_points}, '
-                               f'total_distance={result.total_distance:.2f}')
+
+        self.get_logger().info(
+            f'Task finished: success={result.success}, '
+            f'cleaned_points={result.cleaned_points}, '
+            f'total_distance={result.total_distance:.2f}'
+        )
         return result
+
 
 def main(args=None):
     rclpy.init(args=args)
     client = CleaningClient()
-    
-    client.send_goal('clean_square', area_size=6.0)
+
+    client.send_goal('clean_square', area_size=3.0)
 
     client.send_goal('return_home', target_x=7.5, target_y=7.5)
 
     client.destroy_node()
     rclpy.shutdown()
 
+
 if __name__ == '__main__':
     main()
-
