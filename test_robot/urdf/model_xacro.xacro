@@ -1,0 +1,376 @@
+<?xml version="1.0"?>
+<robot name="visual" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Materials -->
+  <material name="blue">
+    <color rgba="0 0 0.8 1"/>
+  </material>
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+  <material name="white">
+    <color rgba="1 1 1 1"/>
+  </material>
+
+  <!-- Parameters -->
+  <xacro:include filename="model_gazebo.xacro" />
+  <xacro:property name="base_length" value="0.6" />
+  <xacro:property name="base_radius" value="0.2" />
+  <xacro:property name="base_mass" value="10.0" />
+  
+  <xacro:property name="leg_length" value="0.6" />
+  <xacro:property name="leg_width" value="0.1" />
+  <xacro:property name="leg_height" value="0.2" />
+  <xacro:property name="leg_mass" value="2.0" />
+  
+  <xacro:property name="wheel_radius" value="0.035" />
+  <xacro:property name="wheel_length" value="0.1" />
+  <xacro:property name="wheel_mass" value="0.5" />
+  
+  <xacro:property name="leg_offset_y" value="0.22" />
+  <xacro:property name="leg_offset_z" value="0.25" />
+
+  <!-- Macro for cylinder link -->
+  <xacro:macro name="cylinder_link" params="name length radius mass ixx ixy ixz iyy iyz izz material">
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <cylinder length="${length}" radius="${radius}"/>
+        </geometry>
+        <material name="${material}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder length="${length}" radius="${radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${mass}"/>
+        <inertia ixx="${ixx}" ixy="${ixy}" ixz="${ixz}" iyy="${iyy}" iyz="${iyz}" izz="${izz}"/>
+      </inertial>
+    </link>
+  </xacro:macro>
+
+  <!-- Macro for box link with origin -->
+  <xacro:macro name="box_link_with_origin" params="name size_x size_y size_z mass ixx ixy ixz iyy iyz izz material origin_rpy origin_xyz">
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <box size="${size_x} ${size_y} ${size_z}"/>
+        </geometry>
+        <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/>
+        <material name="${material}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${size_x} ${size_y} ${size_z}"/>
+        </geometry>
+        <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/>
+      </collision>
+      <inertial>
+        <mass value="${mass}"/>
+        <origin rpy="${origin_rpy}" xyz="${origin_xyz}"/>
+        <inertia ixx="${ixx}" ixy="${ixy}" ixz="${ixz}" iyy="${iyy}" iyz="${iyz}" izz="${izz}"/>
+      </inertial>
+    </link>
+  </xacro:macro>
+
+  <!-- Macro for simple box link without origin -->
+  <xacro:macro name="box_link" params="name size_x size_y size_z mass ixx ixy ixz iyy iyz izz material">
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <box size="${size_x} ${size_y} ${size_z}"/>
+        </geometry>
+        <material name="${material}"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${size_x} ${size_y} ${size_z}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${mass}"/>
+        <inertia ixx="${ixx}" ixy="${ixy}" ixz="${ixz}" iyy="${iyy}" iyz="${iyz}" izz="${izz}"/>
+      </inertial>
+    </link>
+  </xacro:macro>
+
+  <!-- Macro for wheel -->
+  <xacro:macro name="wheel" params="name parent x_pos">
+    <link name="${name}">
+      <visual>
+        <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision>
+        <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+        <geometry>
+          <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${wheel_mass}"/>
+        <origin rpy="1.57075 0 0" xyz="0 0 0"/>
+        <inertia ixx="0.0002" ixy="0.0" ixz="0.0" iyy="0.0004" iyz="0.0" izz="0.0002"/>
+      </inertial>
+    </link>
+    
+    <joint name="${name}_joint" type="continuous">
+      <axis rpy="0 0 0" xyz="0 1 0"/>
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+      <origin rpy="0 0 0" xyz="${x_pos} 0 -0.085"/>
+    </joint>
+  </xacro:macro>
+
+  <!-- Base Link -->
+  <xacro:cylinder_link 
+    name="base_link" 
+    length="${base_length}" 
+    radius="${base_radius}" 
+    mass="${base_mass}"
+    ixx="0.15" ixy="0.0" ixz="0.0" 
+    iyy="0.15" iyz="0.0" 
+    izz="0.25"
+    material="blue"/>
+
+  <!-- Legs Assembly Macro -->
+  <xacro:macro name="leg_assembly" params="side y_sign">
+    <!-- Leg -->
+    <xacro:box_link_with_origin 
+      name="${side}_leg"
+      size_x="${leg_length}" size_y="${leg_width}" size_z="${leg_height}"
+      mass="${leg_mass}"
+      ixx="0.02" ixy="0.0" ixz="0.0" 
+      iyy="0.018" iyz="0.0" 
+      izz="0.022"
+      material="white"
+      origin_rpy="0 1.57075 0" 
+      origin_xyz="0 0 -0.3"/>
+
+    <joint name="base_to_${side}_leg" type="fixed">
+      <parent link="base_link"/>
+      <child link="${side}_leg"/>
+      <origin xyz="0 ${y_sign * leg_offset_y} ${leg_offset_z}"/>
+    </joint>
+
+    <!-- Base -->
+    <xacro:box_link 
+      name="${side}_base"
+      size_x="0.4" size_y="0.1" size_z="0.1"
+      mass="1.0"
+      ixx="0.0085" ixy="0.0" ixz="0.0" 
+      iyy="0.0085" iyz="0.0" 
+      izz="0.0135"
+      material="white"/>
+
+    <joint name="${side}_base_joint" type="fixed">
+      <parent link="${side}_leg"/>
+      <child link="${side}_base"/>
+      <origin xyz="0 0 -0.6"/>
+    </joint>
+
+    <!-- Wheels -->
+    <xacro:wheel name="${side}_front_wheel" parent="${side}_base" x_pos="0.133333333333"/>
+    <xacro:wheel name="${side}_back_wheel" parent="${side}_base" x_pos="-0.133333333333"/>
+  </xacro:macro>
+
+  <!-- Create legs -->
+  <xacro:leg_assembly side="right" y_sign="-1"/>
+  <xacro:leg_assembly side="left" y_sign="1"/>
+
+  <!-- Gripper Pole -->
+  <link name="gripper_pole">
+    <visual>
+      <geometry>
+        <cylinder length="0.2" radius="0.01"/>
+      </geometry>
+      <origin rpy="0 1.57075 0" xyz="0.1 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.2" radius="0.01"/>
+      </geometry>
+      <origin rpy="0 1.57075 0" xyz="0.1 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <origin rpy="0 1.57075 0" xyz="0.1 0 0"/>
+      <inertia ixx="0.00003" ixy="0.0" ixz="0.0" iyy="0.00003" iyz="0.0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="gripper_extension" type="prismatic">
+    <parent link="base_link"/>
+    <child link="gripper_pole"/>
+    <limit effort="1000.0" lower="-0.38" upper="0" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.19 0 0.2"/>
+  </joint>
+
+  <!-- Gripper Fingers -->
+  <!-- Left Gripper -->
+  <link name="left_gripper">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.1 0.02 0.02"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+    <collision>
+      <origin rpy="0.0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.05 0.01 0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="left_gripper_joint" type="revolute">
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.2 0.01 0"/>
+    <parent link="gripper_pole"/>
+    <child link="left_gripper"/>
+  </joint>
+
+  <link name="left_tip">
+    <visual>
+      <origin rpy="0.0 0 0" xyz="0.09137 0.00495 0"/>
+      <geometry>
+        <box size="0.04 0.015 0.015"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin rpy="0.0 0 0" xyz="0.09137 0.00495 0"/>
+      <geometry>
+        <box size="0.02 0.01 0.01"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <origin rpy="0.0 0 0" xyz="0.09137 0.00495 0"/>
+      <inertia ixx="0.000002" ixy="0.0" ixz="0.0" iyy="0.000002" iyz="0.0" izz="0.000002"/>
+    </inertial>
+  </link>
+
+  <joint name="left_tip_joint" type="fixed">
+    <parent link="left_gripper"/>
+    <child link="left_tip"/>
+  </joint>
+
+  <!-- Right Gripper -->
+  <link name="right_gripper">
+    <visual>
+      <origin rpy="-3.1415 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.1 0.02 0.02"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+    <collision>
+      <origin rpy="-3.1415 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.05 0.01 0.02"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="right_gripper_joint" type="revolute">
+    <axis xyz="0 0 -1"/>
+    <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0.2 -0.01 0"/>
+    <parent link="gripper_pole"/>
+    <child link="right_gripper"/>
+  </joint>
+
+  <link name="right_tip">
+    <visual>
+      <origin rpy="-3.1415 0 0" xyz="0.09137 0.00495 0"/>
+      <geometry>
+        <box size="0.04 0.015 0.015"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+    <collision>
+      <origin rpy="-3.1415 0 0" xyz="0.09137 0.00495 0"/>
+      <geometry>
+        <box size="0.02 0.01 0.01"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <origin rpy="-3.1415 0 0" xyz="0.09137 0.00495 0"/>
+      <inertia ixx="0.000002" ixy="0.0" ixz="0.0" iyy="0.000002" iyz="0.0" izz="0.000002"/>
+    </inertial>
+  </link>
+
+  <joint name="right_tip_joint" type="fixed">
+    <parent link="right_gripper"/>
+    <child link="right_tip"/>
+  </joint>
+
+  <!-- Head -->
+  <link name="head">
+    <visual>
+      <geometry>
+        <sphere radius="0.2"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.2"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.016" ixy="0.0" ixz="0.0" iyy="0.016" iyz="0.0" izz="0.016"/>
+    </inertial>
+  </link>
+
+  <joint name="head_swivel" type="continuous">
+    <parent link="base_link"/>
+    <child link="head"/>
+    <axis xyz="0 0 1"/>
+    <origin xyz="0 0 0.3"/>
+  </joint>
+
+  <!-- Box -->
+  <link name="box">
+    <visual>
+      <geometry>
+        <box size="0.08 0.08 0.08"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.08 0.08 0.08"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0002" ixy="0.0" ixz="0.0" iyy="0.0002" iyz="0.0" izz="0.0002"/>
+    </inertial>
+  </link>
+
+  <joint name="tobox" type="fixed">
+    <parent link="head"/>
+    <child link="box"/>
+    <origin xyz="0.1814 0 0.1414"/>
+  </joint>
+
+</robot>
