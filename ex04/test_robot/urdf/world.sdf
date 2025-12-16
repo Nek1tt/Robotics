@@ -1,0 +1,75 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="default">
+    
+    <!-- Физика -->
+    <plugin filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    
+    <!-- Управление -->
+    <plugin filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    
+    <!-- Сцена -->
+    <plugin filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+
+    <plugin filename="gz-sim-imu-system"
+        name="gz::sim::systems::Imu">
+    </plugin>
+    
+    <!-- !!! СИСТЕМА СЕНСОРОВ !!! -->
+    <plugin filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- Солнце -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Sun
+      </uri>
+    </include>
+
+    <!-- Пол -->
+    <include>
+      <uri>
+        https://fuel.gazebosim.org/1.0/OpenRobotics/models/Ground Plane
+      </uri>
+    </include>
+
+    <!-- === ДОБАВЛЕННАЯ КОРОБКА === -->
+    <model name="huge_obstacle">
+      <!-- Позиция: x=2.5м, y=0, z=1.5м (центр) -->
+      <pose>2.5 0 1.5 0 0 0</pose>
+      <static>true</static> <!-- Не падает и не двигается -->
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <!-- Размер: 1м глубина, 4м ширина, 3м высота -->
+            <box>
+              <size>1 4 3</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>1 4 3</size>
+            </box>
+          </geometry>
+          <material>
+            <!-- Красный цвет для заметности -->
+            <ambient>0.8 0.1 0.1 1</ambient>
+            <diffuse>0.8 0.1 0.1 1</diffuse>
+            <specular>0.8 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
